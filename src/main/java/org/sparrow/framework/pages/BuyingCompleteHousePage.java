@@ -3,25 +3,47 @@ package org.sparrow.framework.pages;
 import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
-import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.sparrow.framework.util.FormatString;
 
-import java.util.List;
-
 public class BuyingCompleteHousePage extends BasePage {
 
-    @FindBy(xpath = "//div[contains(@class, 'dc-input__input-container')]/div")
-    private List<WebElement> inputFields;
+    @FindBy(xpath = "//div[contains(text(), 'Стоимость недвижимости')]/../input")
+    private WebElement realEstatePrice;
 
-    @FindBy(xpath = "//div[@data-test-id='discounts']")
-    private WebElement toggleButtonsContainer;
+    @FindBy(xpath = "//div[contains(text(), 'Первоначальный взнос')]/../input")
+    private WebElement initialFee;
 
-    @FindBy(xpath = "//div[@data-test-id='main-results-block']//ul[not(@data-e2e-id)]/li " +
-            "| //div[@data-test-id='required-income-block']")
-    List<WebElement> listResult;
+    @FindBy(xpath = "//div[@class='dc-input__right-section-4-9-1']/span")
+    private WebElement percentInitialFee;
+
+    @FindBy(xpath = "//div[contains(text(), 'Срок кредита')]/../input")
+    private WebElement loanTerm;
+
+    @FindBy(xpath = "//span[contains(text(), 'Страхование жизни и здоровья')]/../..//label")
+    private WebElement lifeHealthInsurance;
+
+    @FindBy(xpath = "//span[contains(text(), 'Молодая семья')]/../..//label")
+    private WebElement youngFamily;
+
+    //Ежемесячный платеж
+    @FindBy(xpath = "//span[@data-e2e-id='mland-calculator/medium-result-monthly-payment']")
+    private WebElement monthlyPayment;
+
+    //Сумма кредита
+    @FindBy(xpath = "//span[@data-e2e-id='mland-calculator/medium-result-credit-sum']")
+    private WebElement creditSum;
+
+    //Процентная ставка
+    @FindBy(xpath = "//span[@data-e2e-id='mland-calculator/medium-result-credit-rate']")
+    private WebElement creditRate;
+
+    //Необходимый доход
+    @FindBy(xpath = "//span[@data-e2e-id='mland-calculator/result-required-income']")
+    private WebElement requiredIncome;
+
 
     public BuyingCompleteHousePage switchToFrame() {
         driverManager.getDriver().switchTo().frame(driverManager.getDriver().findElement(By.id("iFrameResizer0")));
@@ -33,92 +55,113 @@ public class BuyingCompleteHousePage extends BasePage {
         return this;
     }
 
+    //заполнение полей
+    public BuyingCompleteHousePage fillField(String name, String value) {
+        switch (name) {
+            case "Стоимость недвижимости":
+                fillRealEstatePrice(realEstatePrice, value);
+                break;
+            case "Первоначальный взнос":
+                fillInputField(initialFee, value);
+                break;
+            case "Срок кредита":
+                fillInputField(loanTerm, value);
+                break;
+            default:
+                Assertions.fail(("Поле '" + name + "' не было найдено на странице"));
+        }
+        return this;
+    }
+
     //проверка значений, расчитанных калькулятором
     public BuyingCompleteHousePage checkResult(String name, String expectedValue) {
-        try {
-            Thread.sleep(7000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
 
-        for (WebElement element : listResult) {
-            String text = element.getText();
-            if (text.contains(name)) {
-                String[] values = text.split("\n");
-                Assertions.assertEquals(FormatString.getStringWithoutSpaceLowerCase(expectedValue),
-                        FormatString.getStringWithoutSpaceLowerCase(values[1]),
-                        "Рассчитанное значение некорректно");
-                return this;
-            }
+        switch (name) {
+            case "Ежемесячный платеж":
+                checkValue(expectedValue, monthlyPayment);
+                break;
+            case "Сумма кредита":
+                checkValue(expectedValue, creditSum);
+                break;
+            case "Процентная ставка":
+                checkValue(expectedValue, creditRate);
+                break;
+            case "Необходимый доход":
+                checkValue(expectedValue, requiredIncome);
+                break;
+            default:
+                Assertions.fail(("Поле '" + name + "' не было найдено на странице"));
         }
-        Assertions.fail(("Поле '" + name + "' не было найдено на странице"));
         return this;
+    }
+
+    //клик по кнопке-переключателю //div[contains(text(), 'Страхование жизни и здоровья')]/preceding-sibling::div
+    public BuyingCompleteHousePage clickToggleButton(String name, boolean isOn) {
+        switch (name) {
+            case "Страхование жизни и здоровья":
+                if (isToggleButtonOn(lifeHealthInsurance) != isOn) {
+                    click(lifeHealthInsurance);
+                }
+                break;
+            case "Молодая семья":
+                if (isToggleButtonOn(youngFamily) != isOn) {
+                    click(youngFamily);
+                }
+                break;
+            default:
+                Assertions.fail(("Кнопка '" + name + "' не было найдено на странице"));
+        }
+        return this;
+    }
+
+    //заполнение полей
+    @Override
+    protected void fillInputField(WebElement element, String value) {
+        doFill(element, value);
+    }
+
+    private void fillRealEstatePrice(WebElement element, String value) {
+        doFill(element, value);
+        wait.until(ExpectedConditions.not
+                (ExpectedConditions.attributeContains(percentInitialFee, "innerText", "50,0%")));
+    }
+
+    private void doFill(WebElement element, String value) {
+        element.click();
+        element.sendKeys(Keys.chord(Keys.CONTROL, "a"), value);
+        element.sendKeys(Keys.chord(Keys.SHIFT, Keys.TAB));
+        element.click();
+        Assertions.assertEquals(value, element.getAttribute("defaultValue"), "Поле заполнено некорректно");
     }
 
     //клик по кнопке-переключателю
-    public BuyingCompleteHousePage clickToggleButton(String name) {
-        WebElement toggleButton = getToggleButtonByName(name);
+    private void click(WebElement toggleButton) {
+        action.moveToElement(toggleButton);
         boolean marker = isToggleButtonOn(toggleButton);
-//        waitUtilElementToBeClickable(toggleButton); not work!
+        waitUtilElementToBeClickable(toggleButton);
         toggleButton.click();
-        try {
-            wait.until(ExpectedConditions.attributeContains(toggleButton, "ariaChecked", String.valueOf(!marker)));
-        } catch (TimeoutException e) {
-            Assertions.fail("Состояние кнопки-переключателя не изменилось");
+        //иногда положение меняется со второго клика
+        if (marker == isToggleButtonOn(toggleButton)) {
+            toggleButton.click();
         }
-        return this;
-    }
-
-    //проверка состояния кнопки-переключателя по имени
-    public BuyingCompleteHousePage isToggleButtonOn(String name, boolean expected) {
-        Assertions.assertEquals(expected, isToggleButtonOn(getToggleButtonByName(name)),
-                "Состояние кнопки-переключателя некорректно");
-        return this;
-    }
-
-    //возвращает элемент - кнопку-переклчатель по имени
-    private WebElement getToggleButtonByName(String name) {
-        WebElement toggleButtonName = toggleButtonsContainer.findElement(By.xpath(".//span[contains(text(), '" + name + "')]"));
-        return toggleButtonName.findElement(By.xpath("./../..//input"));
+        //своеобразный wait
+        String value = requiredIncome.getAttribute("innerText");
+        int i = 0;
+        while (!value.equals(requiredIncome.getAttribute("innerText")) && i < 20) {
+            i++;
+            value = requiredIncome.getAttribute("innerText");
+        }
     }
 
     //проверка состояния кнопки-переключателя
     private boolean isToggleButtonOn(WebElement toggleButton) {
-        return Boolean.parseBoolean(toggleButton.getAttribute("ariaChecked"));
+        return toggleButton.getAttribute("className").contains("switch-root--checked");
     }
 
-    //заполнение полей
-    public BuyingCompleteHousePage fillInputField(String name, String value) {
-        By inputXpath = By.xpath("./../input");
-
-        for (WebElement item : inputFields) {
-            if (item.getText().contains(name)) {
-                WebElement element = item.findElement(inputXpath);
-//                int i = 0;
-//
-//                do {
-//                    element.click();
-//                    clear(i++);
-//                } while (!element.getAttribute("defaultValue").equals(""));
-                element.click();
-                element.sendKeys(Keys.chord(Keys.CONTROL, "a"), value);
-                Assertions.assertEquals(value, element.getAttribute("defaultValue"), "Поле заполнено некорректно");
-                return this;
-            }
-        }
-        Assertions.fail(("Поле '" + name + "' не было найдено на странице"));
-        return this;
-    }
-
-    //очистка поля input
-    private void clear(int i) {
-        if (i < 10) {
-            action.sendKeys(Keys.chord(Keys.CONTROL, "A"))
-                    .sendKeys(Keys.BACK_SPACE)
-                    .build().perform();
-        } else {
-            Assertions.fail("Неудалось очистить поле");
-        }
+    private void checkValue(String expectedValue, WebElement element) {
+        Assertions.assertEquals(FormatString.getIntFromString(expectedValue),
+                FormatString.getIntFromString(element.getAttribute("innerText")),
+                "Рассчитанное значение некорректно");
     }
 
     //Проверка открытия страницы, путём проверки Заголовка страницы

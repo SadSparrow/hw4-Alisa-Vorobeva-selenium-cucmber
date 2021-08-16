@@ -6,7 +6,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(Cucumber.class)
 @CucumberOptions(
-        plugin = {"io.qameta.allure.cucumber6jvm.AllureCucumber6Jvm"},
+        plugin = {"org.sparrow.framework.util.MyAllureListener"},
         glue = {"org.sparrow.framework.steps"},
         features = {"src/test/resources/"},
         tags = "@regress"
