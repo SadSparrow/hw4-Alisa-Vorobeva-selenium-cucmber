@@ -12,5 +12,7 @@ public class TestBranch {
         System.out.println(s.substring(5));
         System.out.println(s.substring(6));
         System.out.println(s.substring(5));
+        System.out.println(s.substring(7));
+        System.out.println(s.substring(4));
     }
 }
