@@ -8,5 +8,6 @@ public class TestClass {
         System.out.println(s.substring(4));
         System.out.println(s.substring(3));
         System.out.println(s.substring(3));
+        System.out.println(s.substring(4));
     }
 }
