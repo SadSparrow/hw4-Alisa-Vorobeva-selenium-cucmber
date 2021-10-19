@@ -8,5 +8,9 @@ public class TestBranch {
         System.out.println(s.substring(3));
         System.out.println(s.substring(2));
         System.out.println(s.substring(4));
+        System.out.println(s.substring(5));
+        System.out.println(s.substring(5));
+        System.out.println(s.substring(6));
+        System.out.println(s.substring(5));
     }
 }
